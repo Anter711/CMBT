@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0a0f1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>策马奔腾 60 秒 · 椰子鸡训练场</title>
+<style>
+:root{
+  --gold:#ffd15c;
+  --green:#37e07b;
+  --text:#eaf0ff;
+  --muted:#7f8db3;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;margin:0;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  color:var(--text);
+  background:#0a0f1e;
+  overflow:hidden;
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+  overscroll-behavior:none;
+  touch-action:manipulation;
+}
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:radial-gradient(120% 70% at 50% -10%, #1e2d55 0%, #0a0f1e 58%);
+  z-index:-1;
+}
+#app{position:relative;width:100%;height:100%;max-width:560px;margin:0 auto;}
+
+.screen{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  padding:18px;
+  padding-bottom:calc(18px + env(safe-area-inset-bottom));
+  opacity:0;pointer-events:none;
+  transition:opacity .22s ease;
+}
+.screen.active{opacity:1;pointer-events:auto;}
+
+.btn{
+  border:none;outline:none;cursor:pointer;
+  font-family:inherit;font-weight:700;
+  letter-spacing:2px;border-radius:999px;
+  transition:transform .1s ease, filter .15s ease;
+}
+.btn:active{transform:scale(.97);}
+.btn:disabled{opacity:.55;pointer-events:none;}
+.btn-primary{
+  width:100%;max-width:320px;
+  padding:16px;font-size:18px;color:#241903;
+  background:linear-gradient(180deg,#ffe79b,#ffbe21);
+  box-shadow:0 12px 26px -10px rgba(255,192,46,.9), inset 0 -3px 0 rgba(0,0,0,.12);
+}
+.btn-ghost{
+  width:100%;max-width:320px;
+  padding:12px;font-size:13px;font-weight:600;
+  color:var(--muted);background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.13);
+  letter-spacing:1px;
+}
+.row{display:flex;gap:10px;width:100%;max-width:320px;}
+.row .btn{flex:1;max-width:none;}
+
+/* ---------- 开始页 ---------- */
+#screen-start{justify-content:center;}
+.start-wrap{
+  margin:auto 0;width:100%;
+  display:flex;flex-direction:column;align-items:center;
+  gap:12px;text-align:center;
+}
+.logo-horse{
+  font-size:70px;line-height:1;
+  filter:drop-shadow(0 10px 26px rgba(255,209,92,.4));
+  animation:bob 2.2s ease-in-out infinite;
+}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-2deg);}50%{transform:translateY(-12px) rotate(2deg);}}
+h1{
+  margin:4px 0 0;font-size:clamp(26px,8.5vw,38px);
+  letter-spacing:6px;font-weight:900;
+  background:linear-gradient(180deg,#fff 20%,#ffd15c 100%);
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;
+}
+.sub{margin:0;color:var(--muted);font-size:13px;letter-spacing:3px;}
+.tips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0 4px;}
+.tips span{
+  font-size:12px;color:#9fb0d6;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  padding:6px 12px;border-radius:999px;
+}
+.name-input{
+  width:100%;max-width:320px;margin-top:10px;
+  padding:13px 16px;border-radius:14px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.06);
+  color:var(--text);font-size:15px;font-family:inherit;
+  text-align:center;letter-spacing:1px;outline:none;
+  transition:border-color .15s, background .15s;
+}
+.name-input::placeholder{color:#5f6d90;}
+.name-input:focus{border-color:rgba(255,209,92,.55);background:rgba(255,255,255,.09);}
+.hint{
+  margin:2px 0 0;font-size:12px;color:#6f7ea3;
+  line-height:1.6;min-height:18px;max-width:320px;
+}
+.hint.err{color:#ff7a7a;}
+
+/* ---------- 游戏页 ---------- */
+#screen-game{gap:12px;}
+.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.hud-cell{
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:14px;padding:9px 2px;text-align:center;
+}
+.hud-value{
+  font-size:18px;font-weight:800;line-height:1.15;
+  font-variant-numeric:tabular-nums;letter-spacing:-.3px;
+}
+.hud-cell:first-child .hud-value{color:var(--gold);}
+.hud-cell:nth-child(2) .hud-value{color:var(--green);}
+.hud-label{font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:1px;}
+
+.arena{
+  flex:1;min-height:0;
+  display:flex;flex-direction:column;justify-content:center;
+  gap:16px;
+}
+.lane{
+  position:relative;height:168px;
+  border-radius:20px;overflow:hidden;
+  background:linear-gradient(180deg,#2a4776 0%, #16203a 58%, #0e1626 100%);
+  border:1px solid rgba(255,255,255,.09);
+  box-shadow:inset 0 0 60px rgba(0,0,0,.65), 0 22px 44px -26px #000;
+}
+.lane .sky-lines{
+  position:absolute;left:0;right:0;top:0;height:58%;
+  background:repeating-linear-gradient(90deg, rgba(255,255,255,.045) 0 1px, transparent 1px 72px);
+  background-position-x:var(--bgx2,0px);
+  opacity:.7;
+}
+.lane .ground{
+  position:absolute;left:0;right:0;bottom:0;height:58px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.17) 0 3px, transparent 3px 54px),
+    linear-gradient(180deg, rgba(255,255,255,.07), transparent 80%);
+  background-position-x:var(--bgx,0px), 0;
+  border-top:1px solid rgba(255,255,255,.1);
+}
+.runner{
+  position:absolute;
+  left:16%;bottom:24px;
+  width:64px;height:60px;
+  display:grid;place-items:center;
+  font-size:38px;line-height:1;
+  z-index:2;
+  will-change:transform;
+}
+.runner .horse{
+  display:block;
+  filter:drop-shadow(0 6px 10px rgba(0,0,0,.55));
+  transform:scaleX(-1);
+}
+.runner .dust{
+  position:absolute;left:-26px;bottom:8px;
+  font-size:20px;opacity:0;
+  transition:opacity .18s ease;
+}
+
+.meter{
+  height:12px;border-radius:999px;
+  background:rgba(255,255,255,.07);
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.06);
+}
+.meter > i{
+  display:block;height:100%;width:0%;
+  border-radius:999px;
+  background:linear-gradient(90deg,#37e07b,#ffd15c,#ff5a5f);
+  transition:width .08s linear;
+}
+.shake-tip{
+  text-align:center;font-size:13px;color:var(--muted);
+  letter-spacing:3px;
+}
+.shake-tip b{color:var(--gold);}
+
+.countdown{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:clamp(72px,26vw,110px);font-weight:900;
+  color:var(--gold);
+  pointer-events:none;opacity:0;
+  text-shadow:0 0 70px rgba(255,209,92,.6);
+  z-index:30;
+}
+.countdown.show{animation:cdPop .65s ease-out forwards;}
+@keyframes cdPop{
+  0%{opacity:0;transform:scale(.4);}
+  30%{opacity:1;transform:scale(1.06);}
+  70%{opacity:1;transform:scale(1);}
+  100%{opacity:0;transform:scale(1.28);}
+}
+
+/* ---------- 结算页 ---------- */
+#screen-result{overflow-y:auto;}
+.result-wrap{
+  margin:auto 0;width:100%;
+  display:flex;flex-direction:column;align-items:center;
+  gap:12px;text-align:center;
+}
+.result-title{font-size:13px;color:var(--muted);letter-spacing:4px;}
+.result-dist{display:flex;align-items:baseline;gap:6px;line-height:1;}
+.result-dist b{
+  font-size:clamp(50px,17vw,74px);font-weight:900;
+  font-variant-numeric:tabular-nums;
+  background:linear-gradient(180deg,#fff 20%,#ffd15c 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.result-dist span{font-size:16px;color:var(--muted);}
+.result-badge{
+  display:none;
+  font-size:12px;font-weight:700;letter-spacing:2px;
+  color:#241903;background:linear-gradient(180deg,#ffe79b,#ffbe21);
+  padding:5px 14px;border-radius:999px;
+  box-shadow:0 8px 20px -8px rgba(255,192,46,.9);
+}
+.result-stats{
+  display:grid;grid-template-columns:repeat(2,1fr);
+  gap:8px;width:100%;
+}
+.result-stats > div{
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:14px;padding:10px 4px;
+}
+.result-stats b{display:block;font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;}
+.result-stats b em{font-style:normal;font-size:11px;color:var(--muted);margin-left:2px;font-weight:600;}
+.result-stats span{display:block;font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:1px;}
+
+.submit-status{
+  font-size:12px;letter-spacing:1px;
+  min-height:18px;color:var(--muted);
+  padding:0 6px;line-height:1.5;
+}
+.submit-status.ok{color:var(--green);}
+.submit-status.err{color:#ff7a7a;}
+.submit-status.warn{color:var(--gold);}
+
+/* ---------- 排行榜页 ---------- */
+#screen-board{gap:0;}
+.board-head{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.board-head h2{
+  flex:1;text-align:center;margin:0;
+  font-size:16px;letter-spacing:4px;font-weight:800;
+}
+.btn-icon{
+  width:38px;height:38px;flex-shrink:0;
+  border-radius:12px;border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.06);color:var(--text);
+  font-size:16px;display:grid;place-items:center;cursor:pointer;
+  transition:transform .1s;
+}
+.btn-icon:active{transform:scale(.94);}
+.tabs{display:flex;gap:8px;margin:14px 0 10px;flex-shrink:0;}
+.tab{
+  flex:1;padding:11px;border-radius:12px;cursor:pointer;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  color:var(--muted);font-size:13px;font-weight:700;
+  letter-spacing:1px;font-family:inherit;
+  transition:all .15s;
+}
+.tab.active{
+  background:linear-gradient(180deg,#ffe79b,#ffbe21);
+  color:#241903;border-color:transparent;
+}
+.board-status{
+  font-size:11px;color:var(--muted);
+  letter-spacing:1px;margin-bottom:8px;min-height:16px;flex-shrink:0;
+}
+.board-status.err{color:#ff7a7a;}
+.board-status.warn{color:var(--gold);}
+.rank-list{
+  list-style:none;margin:0;padding:0;
+  overflow-y:auto;flex:1;min-height:0;
+  -webkit-overflow-scrolling:touch;
+}
+.rank-list li{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 13px;border-radius:14px;
+  background:rgba(255,255,255,.045);
+  margin-bottom:7px;
+}
+.rank-list li.hot{
+  background:rgba(255,209,92,.12);
+  box-shadow:inset 0 0 0 1px rgba(255,209,92,.5);
+}
+.rank-list li.empty{
+  justify-content:center;color:var(--muted);
+  font-size:13px;padding:28px 0;background:transparent;
+}
+.rank-list .rk{
+  width:24px;flex-shrink:0;text-align:center;
+  font-weight:900;font-size:14px;color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+.rank-list li:nth-child(1) .rk{color:#ffd15c;}
+.rank-list li:nth-child(2) .rk{color:#cfd8ef;}
+.rank-list li:nth-child(3) .rk{color:#e0a06a;}
+.rank-list .nm{
+  flex:1;min-width:0;font-size:14px;font-weight:600;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.rank-list .sc{
+  font-size:16px;font-weight:900;
+  font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+.rank-list .sc em{font-style:normal;font-size:10px;font-weight:600;color:var(--muted);margin-left:2px;}
+.rank-list .sub{
+  font-size:10px;color:var(--muted);
+  min-width:66px;text-align:right;white-space:nowrap;
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== 开始页 ===== -->
+  <section id="screen-start" class="screen active">
+    <div class="start-wrap">
+      <div class="logo-horse">🏇</div>
+      <h1>策马奔腾</h1>
+      <p class="sub">摇动手机 · 马上吃鸡</p>
+      <div class="tips">
+        <span>⏱ 限时 60 秒</span>
+        <span>📳 摇得越快跑得越远</span>
+      </div>
+      <input id="nameInput" class="name-input" maxlength="12" placeholder="输入昵称（最多 12 字）" autocomplete="off">
+      <button class="btn btn-primary" id="btnStart">开 始 比 赛</button>
+      <div class="row">
+        <button class="btn btn-ghost" id="btnBoardFromStart">排 行 榜</button>
+        <button class="btn btn-ghost" id="btnClearLocal">清 除 本 机</button>
+      </div>
+      <p class="hint" id="hint"></p>
+    </div>
+  </section>
+
+  <!-- ===== 游戏页 ===== -->
+  <section id="screen-game" class="screen">
+    <div class="hud">
+      <div class="hud-cell"><div class="hud-value" id="hudTime">60.0</div><div class="hud-label">剩余秒</div></div>
+      <div class="hud-cell"><div class="hud-value" id="hudDist">0</div><div class="hud-label">米</div></div>
+      <div class="hud-cell"><div class="hud-value" id="hudSpeed">0</div><div class="hud-label">km/h</div></div>
+      <div class="hud-cell"><div class="hud-value" id="hudCps">0</div><div class="hud-label">次/秒</div></div>
+    </div>
+
+    <div class="arena">
+      <div class="lane" id="lane">
+        <div class="sky-lines" id="skyLines"></div>
+        <div class="ground" id="ground"></div>
+        <div class="runner" id="runner">
+          <span class="dust" id="dust">💨</span>
+          <span class="horse">🏇</span>
+        </div>
+      </div>
+      <div class="meter"><i id="meterFill"></i></div>
+      <div class="shake-tip">用 力 <b>摇</b> ！</div>
+    </div>
+
+    <div class="countdown" id="countdown"></div>
+  </section>
+
+  <!-- ===== 结算页 ===== -->
+  <section id="screen-result" class="screen">
+    <div class="result-wrap">
+      <div class="result-title">比 赛 结 束</div>
+      <div class="result-dist"><b id="resDist">0</b><span>米</span></div>
+      <div class="result-badge" id="resBadge">🎉 本 机 新 纪 录</div>
+      <div class="result-stats">
+        <div><b id="resSpeed">0<em>km/h</em></b><span>最高速度</span></div>
+        <div><b id="resCps">0<em>次/秒</em></b><span>平均手速</span></div>
+        <div><b id="resPeak">0<em>次/秒</em></b><span>峰值手速</span></div>
+        <div><b id="resShakes">0<em>次</em></b><span>总摇动</span></div>
+      </div>
+      <p class="submit-status" id="submitStatus"></p>
+      <button class="btn btn-primary" id="btnAgain">再 来 一 次</button>
+      <div class="row">
+        <button class="btn btn-ghost" id="btnBoardFromResult">排 行 榜</button>
+        <button class="btn btn-ghost" id="btnHome">返 回 首 页</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 排行榜页 ===== -->
+  <section id="screen-board" class="screen">
+    <div class="board-head">
+      <button class="btn-icon" id="btnBoardBack">←</button>
+      <h2>训 练 排 行 榜</h2>
+      <button class="btn-icon" id="btnBoardRefresh">⟳</button>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-sort="cps">手速榜</button>
+      <button class="tab" data-sort="dist">距离榜</button>
+    </div>
+    <div class="board-status" id="boardStatus"></div>
+    <ol class="rank-list" id="rankList"></ol>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+   *  ①  云 端 配 置（只改这里）
+   *  ------------------------------------------------------------
+   *  BIN_ID     ：6aec00c7ac6210605a6de6c7
+   *  MASTER_KEY ：$2a$10$R5U1Ye4KegPDlK.IcolWuuj2pDKsJTscsywjousj7J4a5w.v3Q/BS
+   ============================================================ */
+  const CLOUD = {
+    BIN_ID:     '',   // ← 例：'6740a1b2acd3e45f6789abcd'
+    MASTER_KEY: '',   // ← 例：'$2b$10$abcdefghijklmnopqrstuv'
+    BASE: 'https://api.jsonbin.io/v3/b'
+  };
+  /* ============================================================ */
+
+
+  /* ============ 游戏参数 ============ */
+  const CFG = {
+    duration:       60,     // 比赛时长（秒）
+    maxSpeed:       99,     // 速度上限（米/秒）
+    halfLife:       0.50,   // 动力半衰期（秒），越小衰减越快
+    speedPerPower:  3.2,    // 动力 → 速度 系数
+    shakeThreshold: 5.0,    // 摇晃判定阈值（加速度变化量）
+    shakeCooldown:  30,     // 两次计数的冷却（毫秒）
+    impulseMin:     0.30,   // 单次摇晃最小动力
+    impulseMax:     2.40,   // 单次摇晃最大动力
+    maxRecords:     300     // 云端最多保留多少条记录
+  };
+
+  const LS_NAME   = 'wemew_horse_name_v2';
+  const LS_LOCAL  = 'wemew_horse_local_v2';
+
+  /* ============ 元素 ============ */
+  const $ = id => document.getElementById(id);
+
+  const screens = {
+    start:  $('screen-start'),
+    game:   $('screen-game'),
+    result: $('screen-result'),
+    board:  $('screen-board')
+  };
+
+  const el = {
+    lane:      $('lane'),
+    ground:    $('ground'),
+    skyLines:  $('skyLines'),
+    runner:    $('runner'),
+    dust:      $('dust'),
+    meterFill: $('meterFill'),
+    countdown: $('countdown'),
+    hudTime:   $('hudTime'),
+    hudDist:   $('hudDist'),
+    hudSpeed:  $('hudSpeed'),
+    hudCps:    $('hudCps'),
+    hint:      $('hint'),
+    nameInput: $('nameInput'),
+    submitStatus: $('submitStatus'),
+    rankList:  $('rankList'),
+    boardStatus: $('boardStatus')
+  };
+
+  /* ============ 运行时状态 ============ */
+  const G = {
+    running:   false,
+    t:         CFG.duration,
+    power:     0,
+    speed:     0,
+    dist:      0,
+    maxSpeed:  0,
+    shakes:    0,
+    peakCps:   0,
+    shakeTimes: [],
+    lastShake: 0,
+    raf:       0,
+    lastTs:    0,
+    hudTs:     0,
+    bumpPhase: 0,
+    bgx:       0,
+    bgx2:      0
+  };
+
+  let lastAcc = null;
+  let motionBound = false;
+  let lastRecord = null;
+  let boardCache = [];
+  let boardSort = 'cps';
+  let boardReturn = 'start';
+
+  /* ============ 小工具 ============ */
+  function showScreen(name) {
+    Object.keys(screens).forEach(k => screens[k].classList.toggle('active', k === name));
+  }
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+  }
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  function getPlayerName() {
+    const v = (el.nameInput.value || '').trim().slice(0, 12);
+    return v || '无名骑手';
+  }
+
+  /* ============ 本机存储 ============ */
+  function loadLocal() {
+    try {
+      const raw = localStorage.getItem(LS_LOCAL);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
+  }
+
+  function saveLocal(rec) {
+    const list = loadLocal();
+    list.push(rec);
+    list.sort((a, b) => b.dist - a.dist);
+    const top = list.slice(0, 30);
+    try { localStorage.setItem(LS_LOCAL, JSON.stringify(top)); } catch (e) {}
+    return top;
+  }
+
+  function localBestDist() {
+    const list = loadLocal();
+    return list.length ? list[0].dist : 0;
+  }
+
+  /* ============ jsonbin 接口 ============ */
+  function cloudEnabled() { return CLOUD.BIN_ID.trim().length > 0; }
+  function cloudWritable() { return cloudEnabled() && CLOUD.MASTER_KEY.trim().length > 0; }
+
+  function apiHeaders(extra) {
+    const h = Object.assign({ 'Content-Type': 'application/json' }, extra || {});
+    if (CLOUD.MASTER_KEY.trim()) h['X-Master-Key'] = CLOUD.MASTER_KEY.trim();
+    return h;
+  }
+
+  async function apiFetch(url, opts, ms) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), ms || 9000);
+    try {
+      return await fetch(url, Object.assign({}, opts, {
+        signal: ctrl.signal,
+        cache: 'no-store'
+      }));
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function normalizeRecord(r) {
+    if (!r || typeof r !== 'object') return null;
+    const dist = Number(r.dist);
+    const cps  = Number(r.cps);
+    if (!isFinite(dist) || !isFinite(cps)) return null;
+    return {
+      id:    String(r.id || uid()),
+      name:  String(r.name || '无名骑手').slice(0, 12),
+      dist:  Math.max(0, Math.round(dist)),
+      cps:   Math.max(0, Math.round(cps * 10) / 10),
+      peak:  Math.max(0, Number(r.peak) || 0),
+      shakes: Math.max(0, Math.round(Number(r.shakes) || 0)),
+      speed: Math.max(0, Math.round(Number(r.speed) || 0)),
+      ts:    Number(r.ts) || Date.now()
+    };
+  }
+
+  async function cloudRead() {
+    const url = CLOUD.BASE + '/' + CLOUD.BIN_ID.trim() + '/latest';
+    const res = await apiFetch(url, {
+      method: 'GET',
+      headers: apiHeaders({ 'X-Bin-Meta': 'false' })
+    });
+    if (!res.ok) throw new Error('读取失败 HTTP ' + res.status);
+
+    let data = await res.json();
+    if (data && typeof data === 'object' && data.record !== undefined) data = data.record;
+
+    let arr = [];
+    if (Array.isArray(data)) arr = data;
+    else if (data && Array.isArray(data.records)) arr = data.records;
+    else if (data && data.records && typeof data.records === 'object') arr = Object.values(data.records);
+
+    return arr.map(normalizeRecord).filter(Boolean);
+  }
+
+  async function cloudSubmit(rec) {
+    if (!cloudWritable()) throw new Error('未配置 Master Key');
+
+    let lastErr = null;
+    for (let i = 0; i < 3; i++) {
+      try {
+        let records = [];
+        try { records = await cloudRead(); } catch (e) { records = []; }
+
+        records = records.filter(r => r.id !== rec.id);
+        records.push(rec);
+        records.sort((a, b) => b.dist - a.dist);
+        records = records.slice(0, CFG.maxRecords);
+
+        const res = await apiFetch(
+          CLOUD.BASE + '/' + CLOUD.BIN_ID.trim(),
+          {
+            method: 'PUT',
+            headers: apiHeaders(),
+            body: JSON.stringify({ records: records, updatedAt: Date.now() })
+          }
+        );
+        if (res.ok) return records;
+        lastErr = new Error('写入失败 HTTP ' + res.status);
+      } catch (e) {
+        lastErr = e;
+      }
+      await sleep(250 + i * 350);
+    }
+    throw lastErr || new Error('写入失败');
+  }
+
+  /* ============ 传感器（唯一输入方式） ============ */
+  function sensorSupported() {
+    return typeof DeviceMotionEvent !== 'undefined';
+  }
+
+  async function ensureMotionPermission() {
+    if (!sensorSupported()) return false;
+    let granted = true;
+    if (typeof DeviceMotionEvent.requestPermission === 'function') {
+      try {
+        granted = (await DeviceMotionEvent.requestPermission()) === 'granted';
+      } catch (e) {
+        granted = false;
+      }
+    }
+    if (granted) bindMotion();
+    return granted;
+  }
+
+  function bindMotion() {
+    if (motionBound) return;
+    window.addEventListener('devicemotion', onMotion, { passive: true });
+    motionBound = true;
+  }
+
+  function onMotion(e) {
+    if (!G.running) return;
+    const a = e.accelerationIncludingGravity || e.acceleration;
+    if (!a || a.x == null) return;
+
+    if (lastAcc) {
+      const dx = a.x - lastAcc.x;
+      const dy = a.y - lastAcc.y;
+      const dz = a.z - lastAcc.z;
+      const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+      if (d > CFG.shakeThreshold) {
+        const norm = Math.min(1, (d - CFG.shakeThreshold) / 22);
+        addShake(CFG.impulseMin + norm * (CFG.impulseMax - CFG.impulseMin));
+      }
+    }
+    lastAcc = { x: a.x, y: a.y, z: a.z };
+  }
+
+  /* ============ 摇晃输入 ============ */
+  function pruneShakes(now) {
+    while (G.shakeTimes.length && now - G.shakeTimes[0] > 1000) {
+      G.shakeTimes.shift();
+    }
+  }
+
+  function addShake(strength) {
+    if (!G.running) return;
+    const now = performance.now();
+    if (now - G.lastShake < CFG.shakeCooldown) return;
+    G.lastShake = now;
+
+    G.power += strength;
+    G.shakes++;
+    G.shakeTimes.push(now);
+    pruneShakes(now);
+
+    if (G.shakeTimes.length > G.peakCps) G.peakCps = G.shakeTimes.length;
+  }
+
+  /* ============ 游戏主逻辑 ============ */
+  function resetState() {
+    G.running   = false;
+    G.t         = CFG.duration;
+    G.power     = 0;
+    G.speed     = 0;
+    G.dist      = 0;
+    G.maxSpeed  = 0;
+    G.shakes    = 0;
+    G.peakCps   = 0;
+    G.shakeTimes = [];
+    G.lastShake = 0;
+    G.bumpPhase = 0;
+    G.bgx       = 0;
+    G.bgx2      = 0;
+    G.hudTs     = 0;
+    lastAcc = null;
+
+    el.runner.style.transform = 'translateY(0)';
+    el.dust.style.opacity = '0';
+    el.meterFill.style.width = '0%';
+    el.ground.style.setProperty('--bgx', '0px');
+    el.skyLines.style.setProperty('--bgx2', '0px');
+    updateHud();
+  }
+
+  function updateHud() {
+    el.hudTime.textContent  = Math.max(0, G.t).toFixed(1);
+    el.hudDist.textContent  = Math.round(G.dist);
+    el.hudSpeed.textContent = Math.round(G.speed * 3.6);
+    el.hudCps.textContent   = String(G.shakeTimes.length);
+  }
+
+  function render(dt) {
+    el.meterFill.style.width = Math.min(100, (G.speed / CFG.maxSpeed) * 100).toFixed(1) + '%';
+
+    const roll = G.speed * dt * 16;
+    G.bgx -= roll;
+    if (G.bgx < -54) G.bgx += 54;
+    el.ground.style.setProperty('--bgx', G.bgx.toFixed(1) + 'px');
+
+    G.bgx2 -= G.speed * dt * 6;
+    if (G.bgx2 < -72) G.bgx2 += 72;
+    el.skyLines.style.setProperty('--bgx2', G.bgx2.toFixed(1) + 'px');
+
+    G.bumpPhase += dt * (1.5 + G.speed * 0.18);
+    const amp = Math.min(4.5, 1 + G.speed * 0.13);
+    el.runner.style.transform =
+      'translateY(' + (Math.sin(G.bumpPhase * Math.PI * 2) * -amp).toFixed(2) + 'px)';
+
+    el.dust.style.opacity = Math.min(1, G.speed / 12).toFixed(2);
+  }
+
+  function loop(ts) {
+    if (!G.running) return;
+
+    const dt = Math.min((ts - G.lastTs) / 1000, 0.05);
+    G.lastTs = ts;
+
+    G.t -= dt;
+    if (G.t <= 0) {
+      G.t = 0;
+      updateHud();
+      render(dt);
+      finish();
+      return;
+    }
+
+    G.power *= Math.pow(0.5, dt / CFG.halfLife);
+
+    const target = Math.min(G.power * CFG.speedPerPower, CFG.maxSpeed);
+    G.speed += (target - G.speed) * Math.min(1, dt * 14);
+    if (G.speed < 0.02) G.speed = 0;
+    if (G.speed > G.maxSpeed) G.maxSpeed = G.speed;
+
+    G.dist += G.speed * dt;
+
+    pruneShakes(performance.now());
+    render(dt);
+
+    if (ts - G.hudTs > 90) {
+      G.hudTs = ts;
+      updateHud();
+    }
+
+    G.raf = requestAnimationFrame(loop);
+  }
+
+  function retrigger(node) {
+    node.classList.remove('show');
+    void node.offsetWidth;
+    node.classList.add('show');
+  }
+
+  function runCountdown() {
+    const cd = el.countdown;
+    let n = 3;
+
+    (function tick() {
+      if (n > 0) {
+        cd.textContent = String(n);
+        retrigger(cd);
+        n--;
+        setTimeout(tick, 650);
+      } else {
+        cd.textContent = '开始！';
+        retrigger(cd);
+        setTimeout(function () {
+          cd.classList.remove('show');
+          cd.textContent = '';
+          beginRace();
+        }, 460);
+      }
+    })();
+  }
+
+  function startGame() {
+    const name = getPlayerName();
+    try { localStorage.setItem(LS_NAME, name); } catch (e) {}
+
+    resetState();
+    el.submitStatus.textContent = '';
+    el.submitStatus.className = 'submit-status';
+    showScreen('game');
+    runCountdown();
+  }
+
+  function beginRace() {
+    resetState();
+    G.running = true;
+    G.lastTs = performance.now();
+    G.raf = requestAnimationFrame(loop);
+  }
+
+  function finish() {
+    if (!G.running) return;
+    G.running = false;
+    cancelAnimationFrame(G.raf);
+
+    const rec = {
+      id:     uid(),
+      name:   getPlayerName(),
+      dist:   Math.round(G.dist),
+      cps:    Math.round((G.shakes / CFG.duration) * 10) / 10,
+      peak:   G.peakCps,
+      shakes: G.shakes,
+      speed:  Math.round(G.maxSpeed * 3.6),
+      ts:     Date.now()
+    };
+    lastRecord = rec;
+
+    const prevBest = localBestDist();
+    saveLocal(rec);
+
+    $('resDist').textContent   = rec.dist;
+    $('resSpeed').innerHTML    = rec.speed + '<em>km/h</em>';
+    $('resCps').innerHTML      = rec.cps.toFixed(1) + '<em>次/秒</em>';
+    $('resPeak').innerHTML     = rec.peak + '<em>次/秒</em>';
+    $('resShakes').innerHTML   = rec.shakes + '<em>次</em>';
+    $('resBadge').style.display = (rec.dist > prevBest && rec.dist > 0) ? 'inline-block' : 'none';
+
+    showScreen('result');
+    autoSubmit(rec);
+  }
+
+  /* ============ 上传成绩 ============ */
+  function setSubmitStatus(text, cls) {
+    el.submitStatus.textContent = text;
+    el.submitStatus.className = 'submit-status ' + (cls || '');
+  }
+
+  async function autoSubmit(rec) {
+    if (!cloudEnabled()) {
+      setSubmitStatus('未配置云端排行榜 · 成绩已保存在本机', 'warn');
+      return;
+    }
+    if (!cloudWritable()) {
+      setSubmitStatus('未配置 MASTER_KEY · 成绩已保存在本机', 'warn');
+      return;
+    }
+
+    setSubmitStatus('正在上传成绩…', '');
+    try {
+      const records = await cloudSubmit(rec);
+
+      const byCps = records.slice().sort((a, b) => b.cps - a.cps);
+      const byDist = records.slice().sort((a, b) => b.dist - a.dist);
+      const rankCps  = byCps.findIndex(r => r.id === rec.id) + 1;
+      const rankDist = byDist.findIndex(r => r.id === rec.id) + 1;
+
+      if (rankCps > 0) {
+        setSubmitStatus(
+          '已上传 · 手速榜第 ' + rankCps + ' 名 / 距离榜第 ' + rankDist + ' 名',
+          'ok'
+        );
+      } else {
+        setSubmitStatus('已上传', 'ok');
+      }
+
+      boardCache = records;
+      if (screens.board.classList.contains('active')) renderBoard();
+    } catch (e) {
+      setSubmitStatus('上传失败：' + (e && e.message ? e.message : '网络异常'), 'err');
+    }
+  }
+
+  /* ============ 排行榜 ============ */
+  function sortList(list, key) {
+    const arr = list.slice();
+    if (key === 'cps') arr.sort((a, b) => (b.cps - a.cps) || (b.dist - a.dist));
+    else arr.sort((a, b) => (b.dist - a.dist) || (b.cps - a.cps));
+    return arr;
+  }
+
+  function renderBoard() {
+    const key = boardSort;
+    const sorted = sortList(boardCache, key).slice(0, 50);
+
+    if (!sorted.length) {
+      el.rankList.innerHTML = '<li class="empty">暂无记录，快去跑第一场吧</li>';
+      return;
+    }
+
+    el.rankList.innerHTML = sorted.map((r, i) => {
+      const isHot = lastRecord && r.id === lastRecord.id;
+      const primary = key === 'cps'
+        ? r.cps.toFixed(1) + '<em>次/秒</em>'
+        : r.dist + '<em>米</em>';
+      const secondary = key === 'cps'
+        ? r.dist + ' 米'
+        : r.cps.toFixed(1) + ' 次/秒';
+      return '<li class="' + (isHot ? 'hot' : '') + '">' +
+        '<span class="rk">' + (i + 1) + '</span>' +
+        '<span class="nm">' + esc(r.name) + '</span>' +
+        '<span class="sc">' + primary + '</span>' +
+        '<span class="sub">' + secondary + '</span>' +
+      '</li>';
+    }).join('');
+  }
+
+  async function refreshBoard() {
+    el.boardStatus.textContent = '加载中…';
+    el.boardStatus.className = 'board-status';
+    el.rankList.innerHTML = '';
+
+    if (!cloudEnabled()) {
+      boardCache = loadLocal();
+      el.boardStatus.textContent = '未配置云端排行榜 · 显示本机记录';
+      el.boardStatus.className = 'board-status warn';
+      renderBoard();
+      return;
+    }
+
+    try {
+      boardCache = await cloudRead();
+      el.boardStatus.textContent = '共 ' + boardCache.length + ' 条记录';
+      el.boardStatus.className = 'board-status';
+      renderBoard();
+    } catch (e) {
+      boardCache = loadLocal();
+      el.boardStatus.textContent = '云端加载失败 · 显示本机记录';
+      el.boardStatus.className = 'board-status err';
+      renderBoard();
+    }
+  }
+
+  function openBoard(from) {
+    boardReturn = from || 'start';
+    showScreen('board');
+    refreshBoard();
+  }
+
+  /* ============ 开始游戏前的传感器检查 ============ */
+  async function tryStart() {
+    if (!sensorSupported()) {
+      el.hint.textContent = '当前设备不支持动作传感器，请在手机浏览器中打开本页面。';
+      el.hint.className = 'hint err';
+      return false;
+    }
+
+    const ok = await ensureMotionPermission();
+    if (!ok) {
+      el.hint.textContent = '未获得动作传感器权限，无法开始。请刷新页面并在弹窗中点击「允许」。';
+      el.hint.className = 'hint err';
+      return false;
+    }
+
+    el.hint.textContent = '';
+    el.hint.className = 'hint';
+    return true;
+  }
+
+  /* ============ 事件绑定 ============ */
+  $('btnStart').addEventListener('click', async function () {
+    const btn = this;
+    btn.disabled = true;
+    const ok = await tryStart();
+    btn.disabled = false;
+    if (ok) startGame();
+  });
+
+  $('btnAgain').addEventListener('click', async function () {
+    const btn = this;
+    btn.disabled = true;
+    const ok = await tryStart();
+    btn.disabled = false;
+    if (ok) startGame();
+  });
+
+  $('btnHome').addEventListener('click', function () {
+    resetState();
+    showScreen('start');
+  });
+
+  $('btnBoardFromStart').addEventListener('click', function () {
+    openBoard('start');
+  });
+
+  $('btnBoardFromResult').addEventListener('click', function () {
+    openBoard('result');
+  });
+
+  $('btnBoardBack').addEventListener('click', function () {
+    showScreen(boardReturn);
+  });
+
+  $('btnBoardRefresh').addEventListener('click', function () {
+    refreshBoard();
+  });
+
+  document.querySelectorAll('.tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      boardSort = tab.dataset.sort;
+      renderBoard();
+    });
+  });
+
+  $('btnClearLocal').addEventListener('click', function () {
+    if (window.confirm('确定清除本机保存的成绩记录？（不影响云端排行榜）')) {
+      try { localStorage.removeItem(LS_LOCAL); } catch (e) {}
+      el.hint.textContent = '本机记录已清除。';
+      el.hint.className = 'hint';
+    }
+  });
+
+  // 昵称回填
+  try {
+    const savedName = localStorage.getItem(LS_NAME);
+    if (savedName) el.nameInput.value = savedName;
+  } catch (e) {}
+
+  // 初始化
+  resetState();
+
+})();
+</script>
+</body>
+</html>
